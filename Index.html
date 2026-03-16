@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Data Manager</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f2f5; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+        h3 { text-align: center; margin-bottom: 15px; color: #1c1e21; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-save { background-color: #007bff; color: white; }
+        .btn-download { background-color: #28a745; color: white; margin-top: 5px; }
+        .btn-clear { background-color: #dc3545; color: white; margin-top: 20px; font-size: 12px; }
+        
+        .list-container { margin-top: 20px; width: 100%; border-top: 1px solid #eee; padding-top: 10px; }
+        .app-card { background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .app-card strong { color: #007bff; display: block; font-size: 1.1em; }
+        .app-card span { font-size: 0.9em; color: #555; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>App Credential List</h3>
+    
+    <input type="text" id="appName" placeholder="App Name (e.g. Gmail)">
+    <input type="text" id="username" placeholder="Username">
+    <input type="text" id="password" placeholder="Password">
+    
+    <button class="btn btn-save" onclick="addEntry()">Add to List</button>
+    <button class="btn btn-download" onclick="downloadTextFile()">Download All as .txt</button>
+
+    <div id="listDisplay" class="list-container">
+        </div>
+
+    <button class="btn btn-clear" onclick="clearAll()">Clear Local Storage</button>
+</div>
+
+<script>
+    // 1. Initialize data from LocalStorage
+    let appData = JSON.parse(localStorage.getItem('myAppData')) || [];
+
+    // 2. Function to add new data
+    function addEntry() {
+        const app = document.getElementById('appName').value;
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+
+        if (app && user && pass) {
+            const newEntry = { app, user, pass, id: Date.now() };
+            appData.push(newEntry);
+            saveToStorage();
+            renderList();
+            
+            // Clear inputs
+            document.getElementById('appName').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        } else {
+            alert("Fill all boxes!");
+        }
+    }
+
+    // 3. Save to browser memory
+    function saveToStorage() {
+        localStorage.setItem('myAppData', JSON.stringify(appData));
+    }
+
+    // 4. Render the list on screen
+    function renderList() {
+        const listDisplay = document.getElementById('listDisplay');
+        listDisplay.innerHTML = "";
+        
+        appData.forEach(item => {
+            listDisplay.innerHTML += `
+                <div class="app-card">
+                    <strong>${item.app}</strong>
+                    <span>User: ${item.user}</span>
+                    <span>Pass: ${item.pass}</span>
+                </div>
+            `;
+        });
+    }
+
+    // 5. DOWNLOAD AS TEXT FILE
+    function downloadTextFile() {
+        if (appData.length === 0) {
+            alert("No data to download!");
+            return;
+        }
+
+        let fileContent = "MY SAVED APP CREDENTIALS\n=========================\n\n";
+        appData.forEach((item, index) => {
+            fileContent += `${index + 1}. App: ${item.app}\n   User: ${item.user}\n   Pass: ${item.pass}\n\n`;
+        });
+
+        // Create a 'blob' of text
+        const blob = new Blob([fileContent], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "my_passwords.txt";
+        
+        // Trigger the download
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    function clearAll() {
+        if(confirm("This will delete everything in this browser!")) {
+            localStorage.clear();
+            appData = [];
+            renderList();
+        }
+    }
+
+    // Load list on start
+    window.onload = renderList;
+</script>
+
+</body>
+</html>
